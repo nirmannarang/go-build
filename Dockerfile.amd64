@@ -1,4 +1,4 @@
-FROM amd64/golang:1.13.1-alpine3.10
+FROM amd64/golang:1.13.1-buster
 MAINTAINER Tom Denham <tom@projectcalico.org>
 
 ARG QEMU_VERSION=2.9.1-1
@@ -21,11 +21,18 @@ ARG MANIFEST_TOOL_VERSION=v0.7.0
 # Install make for building things
 # Install util-linux for column command (used for output formatting).
 # Install grep and sed for use in some Makefiles (e.g. pulling versions out of glide.yaml)
-# Install libc6-compat for fossa client
-# Install shadow for useradd (it allows to use big UID)
-RUN apk update && apk upgrade --available
-RUN apk add --no-cache su-exec curl bash git openssh mercurial make wget util-linux tini file grep sed libc6-compat shadow
-RUN apk upgrade --no-cache
+RUN apt-get -y update &&  \
+    apt-get -y upgrade && \
+    apt-get install -y curl bash git openssh-client mercurial make wget util-linux file grep sed \
+                       llvm clang libbpf-dev linux-headers-amd64 binutils file iproute2 ca-certificates gcc libc-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN  set -ex; \
+     curl -o /sbin/su-exec.c https://raw.githubusercontent.com/ncopa/su-exec/master/su-exec.c; \
+     gcc -Wall /sbin/su-exec.c -o/sbin/su-exec; \
+     chown root:root /sbin/su-exec; \
+     chmod 0755 /sbin/su-exec; \
+     rm /sbin/su-exec.c
 
 # Install fossa for foss license checks
 ARG FOSSA_VER=1.0.1
@@ -35,13 +42,6 @@ RUN chmod +x /usr/local/bin/fossa
 # Disable ssh host key checking
 RUN echo 'Host *' >> /etc/ssh/ssh_config \
   && echo '    StrictHostKeyChecking no' >> /etc/ssh/ssh_config
-
-# Disable cgo so that binaries we build will be fully static.
-ENV CGO_ENABLED=0
-
-# Recompile the standard library with cgo disabled.  This prevents the standard library from being
-# marked stale, causing full rebuilds every time.
-RUN go install -v std
 
 # Install glide
 RUN go get github.com/Masterminds/glide
@@ -92,4 +92,4 @@ RUN curl -sSL https://github.com/estesp/manifest-tool/releases/download/${MANIFE
     mv manifest-tool /usr/bin/
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
