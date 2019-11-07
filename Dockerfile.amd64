@@ -23,8 +23,10 @@ ARG MANIFEST_TOOL_VERSION=v0.7.0
 # Install grep and sed for use in some Makefiles (e.g. pulling versions out of glide.yaml)
 RUN apt-get -y update &&  \
     apt-get -y upgrade && \
-    apt-get install -y curl bash git openssh-client mercurial make wget util-linux file grep sed \
-                       llvm clang libbpf-dev linux-headers-amd64 binutils file iproute2 ca-certificates gcc libc-dev && \
+    apt-get install --no-install-recommends -y \
+        curl bash git openssh-client mercurial make wget util-linux file grep sed \
+        llvm clang libbpf-dev linux-headers-amd64 binutils file iproute2 \
+        ca-certificates gcc libc-dev bsdmainutils && \
     rm -rf /var/lib/apt/lists/*
 
 RUN  set -ex; \
