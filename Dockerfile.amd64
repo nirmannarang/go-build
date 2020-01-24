@@ -1,3 +1,5 @@
+FROM calico/bpftool:v5.3-amd64 as bpftool
+
 FROM amd64/golang:1.13.1-buster
 MAINTAINER Tom Denham <tom@projectcalico.org>
 
@@ -25,8 +27,8 @@ RUN apt-get -y update &&  \
     apt-get -y upgrade && \
     apt-get install --no-install-recommends -y \
         curl bash git openssh-client mercurial make wget util-linux file grep sed \
-        llvm clang libbpf-dev linux-headers-amd64 binutils file iproute2 \
-        ca-certificates gcc libc-dev bsdmainutils && \
+        llvm clang libbpf-dev binutils file iproute2 \
+        ca-certificates gcc libc-dev bsdmainutils strace && \
     rm -rf /var/lib/apt/lists/*
 
 RUN  set -ex; \
@@ -95,6 +97,8 @@ RUN chmod -R 777 $GOPATH
 RUN curl -sSL https://github.com/estesp/manifest-tool/releases/download/${MANIFEST_TOOL_VERSION}/manifest-tool-linux-amd64 > manifest-tool && \
     chmod +x manifest-tool && \
     mv manifest-tool /usr/bin/
+
+COPY --from=bpftool /bpftool /usr/bin
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
