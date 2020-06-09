@@ -6,3 +6,6 @@ before_script:
 - sudo apt-get update
 script:
   - make image-all
+branches:
+  only:
+  - go-1.14
