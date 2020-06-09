@@ -1,0 +1,8 @@
+dist: xenial
+sudo: required
+
+services: docker
+before_script:
+- sudo apt-get update
+script:
+  - make image-all
